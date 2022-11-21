@@ -5,10 +5,15 @@ export interface ISwitchPoint {
   isActive: boolean;
 }
 
-const switchPointSchema = new Schema<ISwitchPoint>({
+const switchPointSchema = new Schema<ISwitchPoint>(
+  {
     name: { type: String, required: true },
-    isActive: {type: Boolean, required: true },
-  }, 
-  {collection: "switchpoints", timestamps: true});
+    isActive: { type: Boolean, required: true },
+  },
+  { collection: 'switchpoints', timestamps: true },
+);
 
-export const SwitchPoint = model<ISwitchPoint>('SwitchPoint', switchPointSchema);
+export const SwitchPoint = model<ISwitchPoint>(
+  'SwitchPoint',
+  switchPointSchema,
+);

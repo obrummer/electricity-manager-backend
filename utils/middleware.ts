@@ -1,53 +1,56 @@
-// const logger = require('./logger');
-//const logger = require('./logger').createLogger();
-import { createLogger } from 'logger';
-const logger = createLogger();
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
-const requestLogger = (req: Request, _res: Response, next: NextFunction) => {
-  const d = new Date();
-  const options = { hour12: false };
-  const date = d.toLocaleString('fi-FI', options);
-
-  logger.info(`${req.method}@${req.path} at ${date}`);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  logger.info('Body if any: ', req.body);
-  logger.info('------');
+export const requestLogger = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  const date = new Date();
+  console.log(`${req.method}@${req.path} at ${date}`);
+  console.log('Body if any: ', req.body);
+  console.log('------');
   next();
 };
 
- export const unknownEndpoint = (_req: Request, res: Response) => {
+export const unKnownEndpoint = (_req: Request, res: Response) => {
+  console.log(`error unknown endpoint`);
   res.status(404).send({ error: 'Unknown endpoint' });
 };
 
+class AppError extends Error {
+  statusCode: number;
 
-const errorHandler = (err: { name: string; message: unknown; }, _req: Request, res: Response, next: NextFunction) => {
-    logger.error(err.name);
+  constructor(statusCode: number, message: string) {
+    super(message);
 
-    if (err.name === 'CastError') {
-        return res.status(400).send({ error: 'Bad format of ID' });
-    } else if (err.name === 'ValidationError') {
-        return res.status(400).json({ error: "validation error" });
-    } else if (err.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: 'Invalid token' });
-    }
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.name = Error.name;
+    this.statusCode = statusCode;
+    Error.captureStackTrace(this);
+  }
+}
 
-    next(err);
+// Error handling Middleware function for logging the error message
+export const errorLogger = (
+  error: Error,
+  _req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  console.log(`error ${error.message}`);
+  next(error); // calling next middleware
 };
 
-// const tokenExtractor = (req, res, next) => {
-//   const authorization = req.get('authorization');
-//   if (authorization && authorization.toLowerCase().startsWith('bearer')) {
-//     req.token = (authorization.substring(7));
-//   } else {
-//     req.token = null;
-//   }
-//   next();
-// };
+// Error handling Middleware function reads the error message
+// and sends back a response in JSON format
+export const errorResponder = (
+  error: AppError,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+) => {
+  res.header('Content-Type', 'application/json');
 
-module.exports = {
-  requestLogger,
-  unknownEndpoint,
-  errorHandler,
-  //tokenExtractor
+  const status = error.statusCode || 400;
+  res.status(status).send(error.message);
 };
