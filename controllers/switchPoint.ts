@@ -3,10 +3,14 @@ const switchPointRouter = express.Router();
 import { SwitchPoint, ISwitchPoint } from '../models/switchPoint';
 
 // Gets all switches
-switchPointRouter.get('/switches', (_req, res) => {
-  void SwitchPoint.find({}).then((points) => {
-    res.json(points);
-  });
+switchPointRouter.get('/switches', async (_req, res) => {
+  const points = await SwitchPoint.find({});
+  res.json(points);
+
+  // res.json(points);
+  // .then((points) => {
+  //   res.json(points);
+  // });
 });
 
 // Get switch by id
