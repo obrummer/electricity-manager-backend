@@ -1,62 +1,81 @@
 import express from 'express';
 const switchPointRouter = express.Router();
 import { SwitchPoint, ISwitchPoint } from '../models/switchPoint';
+import { validateRequest } from '../utils/validate';
 
-// Gets all switches
-switchPointRouter.get('/switches', async (_req, res) => {
-  const points = await SwitchPoint.find({});
-  res.json(points);
-
-  // res.json(points);
-  // .then((points) => {
-  //   res.json(points);
-  // });
+// Get all switches
+switchPointRouter.get('/switches', async (_req, res, next) => {
+  try {
+    const switchPoints = await SwitchPoint.find({});
+    res.json(switchPoints);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Get switch by id
-switchPointRouter.get('/switches/:id', (req, res) => {
-  void SwitchPoint.findById(req.params.id).then((note) => {
-    res.json(note);
-  });
+switchPointRouter.get('/switches/:id', async (req, res, next) => {
+  try {
+    const switchPoint = await SwitchPoint.findById(req.params.id);
+    res.json(switchPoint);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Create switch
-switchPointRouter.post('/switches', (req, res) => {
-  const { name, isActive } = req.body as ISwitchPoint;
+switchPointRouter.post('/switches', async (req, res, next) => {
+  //Todo
+  try {
+    const { name, isActive, highLimit } = req.body as ISwitchPoint;
 
-  const switchPoint = new SwitchPoint({
-    name: name,
-    isActive: isActive,
-  });
+    validateRequest(name, isActive, highLimit);
 
-  void switchPoint.save().then((savedNote) => {
-    res.json(savedNote);
-  });
+    const switchPoint = new SwitchPoint({
+      name,
+      isActive,
+      highLimit,
+    });
+
+    const savedSwitchPoint = await switchPoint.save();
+    res.json(savedSwitchPoint);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Update switch
-switchPointRouter.put('/switches/:id', (req, res) => {
-  const { name, isActive } = req.body as ISwitchPoint;
+switchPointRouter.put('/switches/:id', async (req, res, next) => {
+  try {
+    const { name, isActive, highLimit } = req.body as ISwitchPoint;
 
-  const switchPoint: ISwitchPoint = {
-    name: name,
-    isActive: isActive,
-  };
+    validateRequest(name, isActive, highLimit);
 
-  SwitchPoint.findByIdAndUpdate(req.params.id, switchPoint, { new: true })
-    .then((updatedSwitchPoint) => {
-      res.json(updatedSwitchPoint);
-    })
-    .catch((error) => console.error(error));
+    const switchPoint: ISwitchPoint = {
+      name,
+      isActive,
+      highLimit,
+    };
+
+    const updatedSwitchPoint = await SwitchPoint.findByIdAndUpdate(
+      req.params.id,
+      switchPoint,
+      { new: true },
+    );
+    res.json(updatedSwitchPoint);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Delete switch
-switchPointRouter.delete('/switches/:id', (req, res, next) => {
-  SwitchPoint.findByIdAndRemove(req.params.id)
-    .then(function () {
-      res.status(204).end();
-    })
-    .catch((error) => next(error));
+switchPointRouter.delete('/switches/:id', async (req, res, next) => {
+  try {
+    await SwitchPoint.findByIdAndRemove(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default switchPointRouter;
