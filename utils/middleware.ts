@@ -27,9 +27,15 @@ export const requestLogger = (
 };
 
 // Error for unknown endpoint
-export const unKnownEndpoint = (_req: Request, res: Response) => {
+export const unKnownEndpoint = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   console.log(`error unknown endpoint`);
-  res.status(404).send({ error: 'Unknown endpoint' });
+  res.status(400);
+  res.json({ error: 'Unknown endpoint' });
+  next();
 };
 
 // Logging the error message
