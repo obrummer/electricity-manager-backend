@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import express, { Application } from 'express';
 import mongoose from 'mongoose';
+import cors from 'cors';
 import switchPointRouter from './controllers/switchPoint';
 import {
   requestLogger,
@@ -10,8 +11,12 @@ import {
   errorResponder,
 } from './utils/middleware';
 import { MONGODB_URI } from './utils/config';
+import electricityPriceRouter from './controllers/electricityPrice';
 const app: Application = express();
+
 app.use(express.json());
+
+app.use(cors());
 
 void mongoose
   .connect(MONGODB_URI)
@@ -25,6 +30,8 @@ void mongoose
 app.use(requestLogger);
 
 app.use('/api', switchPointRouter);
+
+app.use('/api', electricityPriceRouter);
 
 app.use(errorLogger);
 
