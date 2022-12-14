@@ -1,10 +1,5 @@
 import { Schema, model } from 'mongoose';
-
-export interface ISwitchPoint {
-  name: string;
-  isActive: boolean;
-  highLimit: number;
-}
+import { ISwitchPoint } from '../types';
 
 const switchPointSchema = new Schema<ISwitchPoint>(
   {

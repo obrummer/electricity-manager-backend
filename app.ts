@@ -32,6 +32,7 @@ app.use(requestLogger);
 app.use('/api', switchPointRouter);
 
 app.use('/api', electricityPriceRouter);
+app.get('/favicon.ico', (_req, res) => res.status(204));
 
 app.use(errorLogger);
 

@@ -1,16 +1,12 @@
-import axios from 'axios';
+import { getElectricityPriceForCurrentDay } from '../services/electricityPriceService';
 import express from 'express';
 const electricityPriceRouter = express.Router();
-electricityPriceRouter.get('/electricityprice', async (_req, _res, next) => {
+
+// Get electricity price for current day from ENTSOE
+electricityPriceRouter.get('/electricityprice', async (_req, res, next) => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const response = await axios.get('link');
-    console.log(response.data);
-    // res.json({
-    //   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    //   data: JSON.parse(JSON.stringify(response.data)),
-    // });
-    // res.json(response.data);
+    const price = await getElectricityPriceForCurrentDay();
+    res.json(price);
   } catch (error) {
     next(error);
   }
