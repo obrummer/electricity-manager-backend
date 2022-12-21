@@ -4,7 +4,7 @@ import { SwitchPoint } from '../models/switchPoint';
 import { ISwitchPoint } from '../types';
 import { validateRequest } from '../utils/validate';
 import dayjs from 'dayjs';
-import { getElectricityPriceForCurrentDay } from '../services/electricityPriceService';
+import { getElectricityPrice } from '../services/electricityPriceService';
 
 // Get all switches
 switchPointRouter.get('/switches', async (_req, res, next) => {
@@ -12,15 +12,20 @@ switchPointRouter.get('/switches', async (_req, res, next) => {
     const switchPoints = await SwitchPoint.find({});
 
     // Before returning the switches check if a switch is active, meaning if the current price is higher than the high limit
-    const price = await getElectricityPriceForCurrentDay();
+    const price = await getElectricityPrice();
+    const currentDay = dayjs().format('DD.MM.YYYY');
     const currentHour = dayjs().hour().toString().concat(':00');
-    const currentPrice = price.find((priceObject: { time: string }) => {
-      return priceObject.time === currentHour;
-    });
+    const currentPrice = price.find(
+      (priceObject: { time: string; date: string }) => {
+        return (
+          priceObject.time === currentHour && priceObject.date === currentDay
+        );
+      },
+    );
 
     const switchPointsWithPrice = switchPoints.map((switchPoint) => {
       if (currentPrice) {
-        if (switchPoint.highLimit >= currentPrice?.price) {
+        if (switchPoint.highLimit >= currentPrice.price) {
           switchPoint.isActive = true;
         } else {
           switchPoint.isActive = false;

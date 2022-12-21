@@ -1,131 +1,143 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import axios from 'axios';
 import { convertableToString, parseStringPromise } from 'xml2js';
 import dayjs from 'dayjs';
-import { PriceUnit } from '../types';
+import {
+  PriceDocument,
+  PriceUnit,
+  TimeSeries,
+  TimeSeriesPeriod,
+} from '../types';
 import { ENTSOE_API_KEY } from '../utils/config';
 
-// return response from ENTSOE parsed to JSON format
-export const getElectricityPrice = async () =>
-  // startDate?: string,
-  // endDate?: string,
-  {
-    const previousDate = dayjs().subtract(1, 'day').format('YYYYMMDD');
-    const tomorrowDate = dayjs().add(1, 'day').format('YYYYMMDD');
+// return response from ENTSOE
+export const getElectricityPriceInXML = async (
+  startDate?: string,
+  endDate?: string,
+) => {
+  const startingDate = startDate
+    ? startDate
+    : dayjs().subtract(2, 'day').format('YYYYMMDD');
+  const endingDate = endDate
+    ? endDate
+    : dayjs().add(1, 'day').format('YYYYMMDD');
+  const documentType = 'A44';
+  const inDomain = '10YFI-1--------U';
+  const outDomain = '10YFI-1--------U';
+  const url = `https://web-api.tp.entsoe.eu/api?securityToken=${ENTSOE_API_KEY}&documentType=${documentType}&in_Domain=${inDomain}&out_Domain=${outDomain}&periodStart=${startingDate}0000&periodEnd=${endingDate}0000`;
+  const response = await axios.get(url);
 
-    const response = await axios.get(
-      `https://web-api.tp.entsoe.eu/api?securityToken=${ENTSOE_API_KEY}&documentType=A44&in_Domain=10YFI-1--------U&out_Domain=10YFI-1--------U&periodStart=${previousDate}2200&periodEnd=${tomorrowDate}2200`,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const parsedResponse = await parseStringPromise(
-      response.data as convertableToString,
-    );
-    const r = parsedResponse.Publication_MarketDocument;
+  const data = response.data as convertableToString;
 
-    const priceDocument = {
-      mRID: r.mRID[0],
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      revisionNumber: parseInt(r.revisionNumber[0], 10),
-      type: r.type[0],
-      senderMarketParticipantMRID: r['sender_MarketParticipant.mRID'][0]._,
-      senderMarketParticipantMarketRoleType:
-        r['sender_MarketParticipant.marketRole.type'][0],
-      receiverMarketParticipantMRID: r['receiver_MarketParticipant.mRID'][0]._,
-      receiverMarketParticipantMarketRoleType:
-        r['receiver_MarketParticipant.marketRole.type'][0],
-      createdDateTime: r.createdDateTime[0],
-      timezone: 'UTC',
-      period: {
-        timeInterval: {
-          start: r['period.timeInterval'][0].start[0],
-          end: r['period.timeInterval'][0].end[0],
-        },
+  return data;
+};
+
+// parse response from ENTSOE from XML to JSON
+export const getParsedElectricityPrice = async (
+  startDate?: string,
+  endDate?: string,
+): Promise<PriceDocument> => {
+  const data = await getElectricityPriceInXML(startDate, endDate);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const parsedResponse = await parseStringPromise(data);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const r = parsedResponse.Publication_MarketDocument;
+
+  const priceDocument = {
+    mRID: r.mRID[0] as string,
+    revisionNumber: parseInt(r.revisionNumber[0] as string, 10),
+    type: r.type[0] as string,
+    senderMarketParticipantMRID: r['sender_MarketParticipant.mRID'][0]
+      ._ as string,
+    senderMarketParticipantMarketRoleType: r[
+      'sender_MarketParticipant.marketRole.type'
+    ][0] as string,
+    receiverMarketParticipantMRID: r['receiver_MarketParticipant.mRID'][0]
+      ._ as string,
+    receiverMarketParticipantMarketRoleType: r[
+      'receiver_MarketParticipant.marketRole.type'
+    ][0] as string,
+    createdDateTime: r.createdDateTime[0] as string,
+    timezone: 'UTC',
+    period: {
+      timeInterval: {
+        start: r['period.timeInterval'][0].start[0] as string,
+        end: r['period.timeInterval'][0].end[0] as string,
       },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      timeSeries: r.TimeSeries.map(
-        (ts: {
-          [x: string]: any[];
-          mRID: any[];
-          businessType: any[];
-          curveType: any[];
-          Period: {
-            resolution: any;
-            timeInterval: any;
-            Point: any[];
-          }[];
-        }) => ({
-          mRID: ts.mRID[0],
-          businessType: ts.businessType[0],
-          inDomainMRID: ts['in_Domain.mRID'][0]._,
-          outDomainMRID: ts['out_Domain.mRID'][0]._,
-          currencyUnitName: ts['currency_Unit.name'][0],
-          priceMeasureUnitName: ts['price_Measure_Unit.name'][0],
-          curveType: ts.curveType[0],
-          period: {
-            timeInterval: {
-              start: ts.Period[0].timeInterval[0].start[0],
-              end: ts.Period[0].timeInterval[0].end[0],
-            },
-            resolution: ts.Period[0].resolution[0],
-            point: ts.Period[0].Point.map((po) => ({
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-              position: parseInt(po.position[0], 10),
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-              priceAmount: parseFloat(po['price.amount'][0]),
-            })),
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    timeSeries: r.TimeSeries.map(
+      (ts: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [x: string]: any[];
+        mRID: string[];
+        businessType: string[];
+        curveType: string[];
+        Period: {
+          resolution: string;
+          timeInterval: any;
+          Point: any[];
+        }[];
+      }) => ({
+        mRID: ts.mRID[0],
+        businessType: ts.businessType[0],
+        inDomainMRID: ts['in_Domain.mRID'][0]._ as string,
+        outDomainMRID: ts['out_Domain.mRID'][0]._ as string,
+        currencyUnitName: ts['currency_Unit.name'][0] as string,
+        priceMeasureUnitName: ts['price_Measure_Unit.name'][0] as string,
+        curveType: ts.curveType[0],
+        period: {
+          timeInterval: {
+            start: ts.Period[0].timeInterval[0].start[0] as string,
+            end: ts.Period[0].timeInterval[0].end[0] as string,
           },
-        }),
-      ),
-    };
-    return priceDocument;
+          resolution: ts.Period[0].resolution[0],
+          point: ts.Period[0].Point.map((po) => ({
+            position: parseInt(po.position[0] as string, 10),
+            priceAmount: parseFloat(po['price.amount'][0] as string),
+          })),
+        } as TimeSeriesPeriod,
+      }),
+    ) as TimeSeries[],
   };
-
-const formatHour = (hourString: string) =>
-  (hourString.length === 1 ? '0' : '') + hourString;
+  return priceDocument;
+};
 
 // format response from getElectricityPrice
-export const getElectricityPriceForCurrentDay = async (): Promise<
-  PriceUnit[]
-> => {
-  const priceDocument = await getElectricityPrice();
-  const priceForFrontend = {
-    priceArray: priceDocument.timeSeries[1].period.point.map(
-      (point: { priceAmount: number }) => point.priceAmount,
-    ),
-    previousDayPrice: priceDocument.timeSeries[0].period.point.map(
-      (point: { priceAmount: number }) => point.priceAmount,
-    ),
+export const getElectricityPrice = async (
+  startDate?: string,
+  endDate?: string,
+): Promise<PriceUnit[]> => {
+  const priceDocument = await getParsedElectricityPrice(startDate, endDate);
 
-    timeArray: priceDocument.timeSeries[0].period.point.map(
-      (point: { position: any }) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        const date = new Date(priceDocument.period.timeInterval.start);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        date.setHours(date.getHours() - 2 + point.position);
-        return `${formatHour(date.getHours().toString())}:${formatHour(
-          date.getMinutes().toString(),
-        )}`;
-      },
-    ),
-  };
+  const priceUnits = priceDocument.timeSeries
+    .map((timeSeries: TimeSeries) => {
+      const points = timeSeries.period.point.map((point) => ({
+        price:
+          Math.round((point.priceAmount / 10 + Number.EPSILON) * 100) / 100,
+        time:
+          point.position.toString().length === 1
+            ? `0${point.position}:00`
+            : `${point.position.toString()}:00`,
+        date: timeSeries.period.timeInterval.start,
+        priceWithTax:
+          Math.round(((point.priceAmount / 10) * 1.1 + Number.EPSILON) * 100) /
+          100,
+      }));
+      return points;
+    })
+    .flat(1) as PriceUnit[];
 
-  const lastItem = priceForFrontend.previousDayPrice[23];
-  const newArray = [lastItem].concat(priceForFrontend.priceArray);
-  newArray.pop();
+  priceUnits.forEach((item) => {
+    if (item.time === '24:00') {
+      item.time = '00:00';
+      const date = new Date(item.date);
+      date.setDate(date.getDate() + 1);
+      item.date = date.toISOString();
+    }
+  });
 
-  priceForFrontend.priceArray = newArray.map(
-    (price: number, index: number) => ({
-      price: Math.round((price / 10 + Number.EPSILON) * 100) / 100,
-      time: priceForFrontend.timeArray[index],
-      priceWithTax:
-        Math.round(((price / 10) * 1.1 + Number.EPSILON) * 100) / 100,
-      date: dayjs(priceDocument.period.timeInterval.end as string)
-        .subtract(1, 'day')
-        .format('DD.MM.YYYY'),
-    }),
-  );
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  return priceForFrontend.priceArray;
+  priceUnits.forEach((item) => {
+    item.date = dayjs(item.date).format('DD.MM.YYYY');
+  });
+  return priceUnits;
 };

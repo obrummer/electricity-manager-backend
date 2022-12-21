@@ -10,3 +10,48 @@ export interface PriceUnit {
   priceWithTax: number;
   date: string;
 }
+
+export interface TimeInterval {
+  start: string;
+  end: string;
+}
+
+export interface Period {
+  timeInterval: TimeInterval;
+}
+
+export interface TimeSeries {
+  mRID: string;
+  businessType: string;
+  inDomainMRID: string;
+  outDomainMRID: string;
+  currencyUnitName: string;
+  priceMeasureUnitName: string;
+  curveType: string;
+  period: TimeSeriesPeriod;
+}
+
+export interface Point {
+  position: number;
+  priceAmount: number;
+}
+
+export interface TimeSeriesPeriod {
+  timeInterval: TimeInterval;
+  resolution: string;
+  point: Point[];
+}
+
+export interface PriceDocument {
+  timeSeries: TimeSeries[];
+  period: Period;
+  mRID: string;
+  revisionNumber: number;
+  type: string;
+  senderMarketParticipantMRID: string;
+  senderMarketParticipantMarketRoleType: string;
+  receiverMarketParticipantMRID: string;
+  receiverMarketParticipantMarketRoleType: string;
+  createdDateTime: string;
+  timezone: string;
+}
