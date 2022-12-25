@@ -6,8 +6,20 @@ import {
   PriceUnit,
   TimeSeries,
   TimeSeriesPeriod,
+  Indicators,
 } from '../types';
 import { ENTSOE_API_KEY } from '../utils/config';
+import {
+  getElectricityPricesForDate,
+  getAveragePrice,
+  getPercentageDifference,
+  getHighestPrice,
+  getLowestPrice,
+  getCurrentPrice,
+  roundByTwoDecimals,
+  today,
+  yesterday,
+} from '../utils/priceHelpers';
 
 // return response from ENTSOE
 export const getElectricityPriceInXML = async (
@@ -140,4 +152,32 @@ export const getElectricityPrice = async (
     item.date = dayjs(item.date).format('DD.MM.YYYY');
   });
   return priceUnits;
+};
+
+export const getIndicators = async (): Promise<Indicators> => {
+  const data = await getElectricityPrice();
+  const todayData = getElectricityPricesForDate(data, today);
+  const averagePriceToday = getAveragePrice(todayData);
+
+  const yesterdayData = getElectricityPricesForDate(data, yesterday);
+  const averagePriceYesterday = getAveragePrice(yesterdayData);
+
+  const priceDifferencePercentage = roundByTwoDecimals(
+    getPercentageDifference(averagePriceToday, averagePriceYesterday),
+  );
+
+  const todayHighestPrice = roundByTwoDecimals(getHighestPrice(todayData));
+  const todayLowestPrice = roundByTwoDecimals(getLowestPrice(todayData));
+
+  const currentPrice = roundByTwoDecimals(getCurrentPrice(todayData));
+
+  const indicators = {
+    averagePriceToday: roundByTwoDecimals(averagePriceToday),
+    priceDifferencePercentage: priceDifferencePercentage,
+    todayHighestPrice: todayHighestPrice,
+    todayLowestPrice: todayLowestPrice,
+    currentPrice: currentPrice,
+  };
+
+  return indicators;
 };

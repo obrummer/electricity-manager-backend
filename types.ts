@@ -55,3 +55,17 @@ export interface PriceDocument {
   createdDateTime: string;
   timezone: string;
 }
+
+export enum PriceDate {
+  TODAY = 'today',
+  TOMORROW = 'tomorrow',
+  YESTERDAY = 'yesterday',
+}
+
+export interface Indicators {
+  averagePriceToday: number;
+  priceDifferencePercentage: number;
+  todayHighestPrice: number;
+  todayLowestPrice: number;
+  currentPrice: number;
+}

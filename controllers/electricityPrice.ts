@@ -1,4 +1,7 @@
-import { getElectricityPrice } from '../services/electricityPriceService';
+import {
+  getElectricityPrice,
+  getIndicators,
+} from '../services/electricityPriceService';
 import express from 'express';
 const electricityPriceRouter = express.Router();
 import dayjs = require('dayjs');
@@ -47,5 +50,14 @@ electricityPriceRouter.get(
     }
   },
 );
+
+electricityPriceRouter.get('/indicators', async (_req, res, next) => {
+  try {
+    const indicators = await getIndicators();
+    res.json(indicators);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default electricityPriceRouter;
