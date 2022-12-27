@@ -12,6 +12,7 @@ import {
 } from './utils/middleware';
 import { MONGODB_URI } from './utils/config';
 import electricityPriceRouter from './controllers/electricityPrice';
+import testingRouter from './controllers/testing';
 const app: Application = express();
 
 app.use(express.json());
@@ -33,6 +34,10 @@ app.use('/api', switchPointRouter);
 
 app.use('/api', electricityPriceRouter);
 app.get('/favicon.ico', (_req, res) => res.status(204));
+
+if (process.env.NODE_ENV === 'test') {
+  app.use('/api', testingRouter);
+}
 
 app.use(errorLogger);
 
