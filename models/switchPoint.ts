@@ -3,7 +3,7 @@ import { ISwitchPoint } from '../types';
 
 const switchPointSchema = new Schema<ISwitchPoint>(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     isActive: { type: Boolean, required: true },
     highLimit: { type: Number, required: true },
   },

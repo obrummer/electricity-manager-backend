@@ -98,7 +98,6 @@ describe('Switch CRUD tests', () => {
         // Check the response
         expect(res.body._id).toBeTruthy();
         expect(res.body.name).toBe(updatedData.name);
-        expect(res.body.isActive).toBe(updatedData.isActive);
 
         // Check the data in the database
         const point = await SwitchPoint.findById(res.body._id);

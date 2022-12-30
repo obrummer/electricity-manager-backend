@@ -13,6 +13,10 @@ import {
 import { MONGODB_URI } from './utils/config';
 import electricityPriceRouter from './controllers/electricityPrice';
 import testingRouter from './controllers/testing';
+import {
+  cronJobToUpdateSwitchPoints,
+  updateSwitchPoints,
+} from './utils/scheduledFunctions';
 const app: Application = express();
 
 app.use(express.json());
@@ -29,6 +33,11 @@ void mongoose
   });
 
 app.use(requestLogger);
+
+if (process.env.NODE_ENV !== 'test') {
+  cronJobToUpdateSwitchPoints.start();
+}
+void updateSwitchPoints();
 
 app.use('/api', switchPointRouter);
 
