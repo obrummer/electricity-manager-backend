@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { convertableToString, parseStringPromise } from 'xml2js';
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import {
   PriceDocument,
   PriceUnit,
@@ -10,16 +13,16 @@ import {
 } from '../types';
 import { ENTSOE_API_KEY } from '../utils/config';
 import {
-  getElectricityPricesForDate,
   getAveragePrice,
   getPercentageDifference,
   getHighestPrice,
   getLowestPrice,
   getCurrentPrice,
   roundByTwoDecimals,
-  today,
-  yesterday,
 } from '../utils/priceHelpers';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(localizedFormat);
 
 // return response from ENTSOE
 export const getElectricityPriceInXML = async (
@@ -149,17 +152,20 @@ export const getElectricityPrice = async (
   });
 
   priceUnits.forEach((item) => {
-    item.date = dayjs(item.date).format('DD.MM.YYYY');
+    item.date = dayjs(item.date).tz('Europe/Helsinki').format('DD.MM.YYYY');
   });
   return priceUnits;
 };
 
 export const getIndicators = async (): Promise<Indicators> => {
   const data = await getElectricityPrice();
-  const todayData = getElectricityPricesForDate(data, today);
+  const todayData = data.filter((priceObject: { date: string }) => {
+    return priceObject.date === dayjs().format('DD.MM.YYYY');
+  });
   const averagePriceToday = getAveragePrice(todayData);
-
-  const yesterdayData = getElectricityPricesForDate(data, yesterday);
+  const yesterdayData = data.filter((priceObject: { date: string }) => {
+    return priceObject.date === dayjs().subtract(1, 'day').format('DD.MM.YYYY');
+  });
   const averagePriceYesterday = getAveragePrice(yesterdayData);
 
   const priceDifferencePercentage = roundByTwoDecimals(

@@ -1,10 +1,7 @@
 import cron from 'node-cron';
 import { SwitchPoint } from '../models/switchPoint';
-import {
-  getCurrentPrice,
-  getElectricityPricesForDate,
-  today,
-} from './priceHelpers';
+import { getCurrentPrice } from './priceHelpers';
+import dayjs from 'dayjs';
 import { getElectricityPrice } from '../services/electricityPriceService';
 
 // Cron expression for every hour
@@ -15,7 +12,9 @@ const cronExpression = '0 * * * *';
 export async function updateSwitchPoints() {
   try {
     const data = await getElectricityPrice();
-    const todayData = getElectricityPricesForDate(data, today);
+    const todayData = data.filter((priceObject: { date: string }) => {
+      return priceObject.date === dayjs().format('DD.MM.YYYY');
+    });
     const currentPrice = getCurrentPrice(todayData);
     const switchPoints = await SwitchPoint.find({});
     console.log('Update function is run with price:', currentPrice);

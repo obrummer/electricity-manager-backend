@@ -23,6 +23,8 @@ app.use(express.json());
 
 app.use(cors());
 
+app.use(express.static('build'));
+
 void mongoose
   .connect(MONGODB_URI)
   .then(() => {

@@ -4,11 +4,8 @@ import { SwitchPoint } from '../models/switchPoint';
 import { ISwitchPoint } from '../types';
 import { validateRequest } from '../utils/validate';
 import { getElectricityPrice } from '../services/electricityPriceService';
-import {
-  getCurrentPrice,
-  getElectricityPricesForDate,
-  today,
-} from '../utils/priceHelpers';
+import { getCurrentPrice } from '../utils/priceHelpers';
+import dayjs from 'dayjs';
 
 // Get all switches
 switchPointRouter.get('/switches', async (_req, res, next) => {
@@ -36,7 +33,9 @@ switchPointRouter.post('/switches', async (req, res, next) => {
   //Todo
   try {
     const data = await getElectricityPrice();
-    const todayData = getElectricityPricesForDate(data, today);
+    const todayData = data.filter((priceObject: { date: string }) => {
+      return priceObject.date === dayjs().format('DD.MM.YYYY');
+    });
     const currentPrice = getCurrentPrice(todayData);
     const { name, isActive, highLimit } = req.body as ISwitchPoint;
 
@@ -59,7 +58,9 @@ switchPointRouter.post('/switches', async (req, res, next) => {
 switchPointRouter.put('/switches/:id', async (req, res, next) => {
   try {
     const data = await getElectricityPrice();
-    const todayData = getElectricityPricesForDate(data, today);
+    const todayData = data.filter((priceObject: { date: string }) => {
+      return priceObject.date === dayjs().format('DD.MM.YYYY');
+    });
     const currentPrice = getCurrentPrice(todayData);
     const { name, isActive, highLimit } = req.body as ISwitchPoint;
 

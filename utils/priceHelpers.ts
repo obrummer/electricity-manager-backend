@@ -1,9 +1,21 @@
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { PriceUnit } from '../types';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(localizedFormat);
 
-export const today = dayjs().format('DD.MM.YYYY');
-export const tomorrow = dayjs().add(1, 'day').format('DD.MM.YYYY');
-export const yesterday = dayjs().subtract(1, 'day').format('DD.MM.YYYY');
+export const today = dayjs().tz('Europe/Helsinki').format('DD.MM.YYYY');
+export const tomorrow = dayjs()
+  .tz('Europe/Helsinki')
+  .add(1, 'day')
+  .format('DD.MM.YYYY');
+export const yesterday = dayjs()
+  .tz('Europe/Helsinki')
+  .subtract(1, 'day')
+  .format('DD.MM.YYYY');
 
 export const getElectricityPricesForDate = (
   priceUnits: PriceUnit[],
@@ -41,7 +53,11 @@ export const getLowestPrice = (data: PriceUnit[]): number => {
 };
 
 export const getCurrentPrice = (data: PriceUnit[]): number => {
-  const currentHour = dayjs().hour().toString().concat(':00');
+  let currentHour = dayjs().tz('Europe/Helsinki').hour().toString();
+  if (currentHour.length === 1) {
+    currentHour = `0${currentHour}`;
+  }
+  currentHour = `${currentHour}:00`;
   const currentPrice = data.find((item) => item.time === currentHour);
   if (!currentPrice) {
     return 0;
